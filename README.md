@@ -11,6 +11,9 @@ Generates beautiful photo book PDFs based on templates and album files.
   // default style used for placeholders that do not specify a specific style
   "defaultStyleRef": "default", 
 
+  // format of the pages
+  "format": "{a format name}",
+  
   // margins for entire album
   "margins": {
     "inner": 6,
@@ -27,8 +30,8 @@ Generates beautiful photo book PDFs based on templates and album files.
       "placeholders": {
         "{your placeholder identifier}": {
         "{your placeholder identifier}": {d
-          // will this be assigned an image or text?
-          "contentType": "text|image",
+          // will this be assigned an image, text, or page number?
+          "contentType": "{image|text|page}",
           // for ordering
           "layer": 1,
           // coordinates, in percent
@@ -56,10 +59,10 @@ Generates beautiful photo book PDFs based on templates and album files.
       "opacity": 0.5,
       "color": "#rrggbb",
       "fontSize": 9,
-      "verticalAlign": "bottom|center|top"
+      "verticalAlign": "bottom|center|top",
       "parentRef": "text",
       "fontWeight":"bold|normal",
-      "textAlign":"center|justify",
+      "textAlign":"left|right|center|justified",
       "borderWidth": 5,
       "borderColor": "#rrggbb"
     },
@@ -104,6 +107,8 @@ Generates beautiful photo book PDFs based on templates and album files.
 }
 ```
 
+Note that captions and text can make limited use of markdown.
+
 ## Command line options
 
 ```
@@ -111,6 +116,8 @@ fotto
     --width UNIT    The page with, in cm, in, or pt
     --page UNIT     The page height, in cm, in, or pt
     --watch true    If set, watch the input file and re-render the output on every change.
+    --view true     Open a PDF viewer when generation is complete.
     --out FILE      Output file
     --pages RANGE   Render only a subset of pages. Useful in combination with --watch for performance reasons.
     FILE            Input album file
+```

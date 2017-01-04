@@ -5,7 +5,7 @@ import play.api.libs.json.{Json, Reads}
 /**
   * Created by simfischer on 12/23/16.
   */
-case class Template(defaultStyleRef: Option[String], pageTemplates: Map[String,PageTemplate], styles: Map[String,Style], margins: Margins)
+case class Template(format: String, defaultStyleRef: Option[String], pageTemplates: Map[String,PageTemplate], styles: Map[String,Style], margins: Margins)
 case class Margins(top: Float, bottom: Float, inner: Float, outer: Float)
 case class PageTemplate(placeholders: Map[String, Placeholder], twoSided: Option[Boolean])
 

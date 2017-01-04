@@ -1,10 +1,10 @@
 package com.github.count_numbers.fotto
 
-import java.io.{File, FileOutputStream, Serializable}
+import java.awt.Desktop
+import java.io.{File, FileOutputStream}
 
 import com.typesafe.scalalogging.Logger
-
-import play.api.libs.json.{Json, Reads}
+import play.api.libs.json.Json
 
 import scala.io.Source
 
@@ -14,6 +14,8 @@ import scala.io.Source
 object Fotto {
 
   val logger = Logger("fotto")
+
+  var viewerOpen = false
 
   def main(args: Array[String]): Unit = {
     val options: Map[Symbol, Any] = CLI.parseCLIArgs(args)
@@ -55,23 +57,28 @@ object Fotto {
         // ... either the same if no parent was specified
         case None => style
         // ... or, if the parent was specified, ...
-        case Some(parentRef) => {
+        case Some(parentRef) =>
           /// ... a new style falling back to the parent, if we find a parent with that name.
           templateRaw.styles.get(parentRef)
             .map(p => style.orElse(p))
             .getOrElse({logger.debug(s"Parent of ${key} not found: ${parentRef}."); style})
-        }
       })
     })
 
-    val template = templateRaw.copy(styles = stylesWithFallbacks)
+    val template: Template = templateRaw.copy(styles = stylesWithFallbacks)
 
     logger.debug("Book: "+book)
     logger.debug("Template: "+template)
 
-    val out = PdfOutput(infile.getParentFile, new FileOutputStream("out.pdf"),
-      options.getOrElse('width, 600).asInstanceOf[Float],
-      options.getOrElse('height, 600).asInstanceOf[Float],
+    // User can override size as CLI arg. Otherwise, use named format from template.
+    val format = (options.get('width), options.get('height)) match {
+      case (Some(width: Float), Some(height: Float)) => Format(width, height)
+      // TODO: Handle unknown format names
+      case _ => Format.namedFormats(template.format)
+    }
+
+    val out = PdfOutput(infile.getParentFile, new FileOutputStream(outfile),
+      format,
       book.language, book.country)
 
 
@@ -88,7 +95,7 @@ object Fotto {
         // placeholder's styleref falls back to template's default
         val styleFromTemplate: Option[Style] =
         placeholder.styleRef.orElse(template.defaultStyleRef)
-          .flatMap(template.styles.get(_))
+          .flatMap(template.styles.get)
 
         val styleOverride: Option[Style] = page.styleOverrides.getOrElse(Map()).get(key)
 
@@ -106,7 +113,7 @@ object Fotto {
           // if undefined, see what placeholder the placeholder wants to default to and take that placeholders image
           .orElse({
             logger.debug(s"No content assigned to ${key}. Trying default.")
-            placeholder.defaultTo.flatMap(page.assignments.get(_))
+            placeholder.defaultTo.flatMap(page.assignments.get)
           })
           .orElse({
             logger.warn(s"No content assigned to ${key}.")
@@ -115,7 +122,7 @@ object Fotto {
 
         val mirroredPlaceholder =
           if ((pageNumber % 2 == 1) && pageTemplate.twoSided.getOrElse(false))
-            placeholder.mirror
+            placeholder.mirror()
           else
             placeholder
 
@@ -147,7 +154,14 @@ object Fotto {
       }
     }
 
-    out.close
+    out.close()
+
+    for (view <- options.get('view)) {
+      if (view == true && !viewerOpen) {
+        viewerOpen = true
+        Desktop.getDesktop.open(outfile)
+      }
+    }
   }
 
 }

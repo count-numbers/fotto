@@ -33,6 +33,6 @@ object PagesPattern {
 case class PagesPattern(ranges: Seq[Range]) {
 
   def contains(page: Int) = {
-    ranges.isEmpty || !ranges.filter(_.contains(page)).isEmpty
+    ranges.isEmpty || ranges.exists(_.contains(page))
   }
 }

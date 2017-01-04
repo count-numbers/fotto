@@ -15,4 +15,6 @@ object Util {
     }
   }
 
+  def cmToPt(x: Float) = x * 72 * 0.393701f
+
 }
