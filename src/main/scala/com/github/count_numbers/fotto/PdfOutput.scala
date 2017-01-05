@@ -17,8 +17,11 @@ import com.itextpdf.layout.Canvas
 import com.itextpdf.layout.hyphenation.HyphenationConfig
 import com.itextpdf.layout.property.{TabAlignment, TextAlignment, VerticalAlignment}
 import com.itextpdf.layout.renderer.IRenderer
+import com.typesafe.scalalogging.Logger
 
 object PdfOutput {
+
+  val logger = Logger("fotto")
 
   def apply(searchPath: File, out: OutputStream, format: Format, language: String, country: String): PdfOutput = {
     val writer = new PdfWriter(out)
@@ -99,13 +102,15 @@ class PdfOutput (val searchPath: File,
 
   def addImage(image: Content, x: Float, y: Float, width: Float, height: Float, styleOpt: Option[Style]) = {
     withStyle(styleOpt, x, y, width, height)(canvas => {
+
+      canvas.rectangle(percentageToUserSpace(x, y, width, height))
+      canvas.clip()
+      canvas.newPath()
+
       for (imageUrl <- image.url) {
         val img: ImageData = ImageDataFactory.create(new File(searchPath, imageUrl).toURI.toURL)
         val imgModel = new Image(img)
 
-        canvas.rectangle(percentageToUserSpace(x, y, width, height))
-        canvas.clip()
-        canvas.newPath()
         val xRatio = percentageToUserSpaceX(width) / imgModel.getImageScaledWidth
         val yRatio = percentageToUserSpaceY(height) / imgModel.getImageScaledHeight
         val scale = Math.max(xRatio, yRatio)
@@ -131,10 +136,18 @@ class PdfOutput (val searchPath: File,
         state.setStrokeOpacity(o)
       })
     }
+
+    for (style <- styleOpt) {
+      for (backgroundColor <- style.backgroundColor) {
+        val borderRect = percentageToUserSpace(x, y, width, height)
+        pageCanvas.rectangle(borderRect)
+        pageCanvas.setFillColor(PdfUtil.colorFromHex(backgroundColor))
+        pageCanvas.fill()
+      }
+    }
     pageCanvas.setExtGState(state)
 
     f(pageCanvas)
-
 
     for (style <- styleOpt) {
       if (style.borderWidth.isDefined || style.borderColor.isDefined) {

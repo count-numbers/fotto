@@ -85,7 +85,7 @@ object Fotto {
     val pagesPattern = options.getOrElse('pages, PagesPattern("")).asInstanceOf[PagesPattern]
 
     for ((page: Page, pageNumber: Int) <- book.pages.view.zipWithIndex if pagesPattern.contains(pageNumber+1)) {
-      logger.info(s"Processing page #${pageNumber} of type ${page.pageTemplateRef}.")
+      logger.info(s"### Processing page ${pageNumber+1} of type ${page.pageTemplateRef}.")
 
       out.startPage()
 
@@ -117,7 +117,7 @@ object Fotto {
           })
           .orElse({
             logger.warn(s"No content assigned to ${key}.")
-            None
+            Some(Content())
           })
 
         val mirroredPlaceholder =

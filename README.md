@@ -64,7 +64,8 @@ Generates beautiful photo book PDFs based on templates and album files.
       "fontWeight":"bold|normal",
       "textAlign":"left|right|center|justified",
       "borderWidth": 5,
-      "borderColor": "#rrggbb"
+      "borderColor": "#rrggbb",
+      "backgroundColor": "#rrggbb"
     },
     // more styles
     ...

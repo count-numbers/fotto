@@ -36,7 +36,8 @@ case class Style(
   fontSize: Option[Float],
   textAlign: Option[String],
   fontWeight: Option[String],
-  verticalAlign: Option[String]) {
+  verticalAlign: Option[String],
+  backgroundColor: Option[String]) {
 
   def orElse(other: Style): Style = {
     Style(
@@ -48,7 +49,8 @@ case class Style(
       fontSize.orElse(other.fontSize),
       textAlign.orElse(other.textAlign),
       fontWeight.orElse(other.fontWeight),
-      verticalAlign.orElse(other.verticalAlign)
+      verticalAlign.orElse(other.verticalAlign),
+      backgroundColor.orElse(other.backgroundColor)
     )
   }
 }
