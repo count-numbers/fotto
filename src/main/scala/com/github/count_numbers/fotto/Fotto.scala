@@ -107,7 +107,7 @@ object Fotto {
         }
 
         // See whether an image/text is specified for this placeholder
-        val assignmentOpt: Option[String] =
+        val assignmentOpt: Option[Content] =
         // user defined assignment
         page.assignments.get(key)
           // if undefined, see what placeholder the placeholder wants to default to and take that placeholders image
@@ -135,20 +135,20 @@ object Fotto {
         // insert image or text, depending on type
         relativePlaceholder.contentType match {
           case "image" => {
-            for (image <- assignmentOpt) {
+            for (image: Content <- assignmentOpt) {
               logger.debug(s"   ${key} -> ${relativePlaceholder} -> ${image} -> ${style}.")
               out.addImage(image, relativePlaceholder.x, relativePlaceholder.y, relativePlaceholder.width, relativePlaceholder.height, style)
             }
           }
           case "text" => {
-            for (text <- assignmentOpt) {
+            for (text: Content <- assignmentOpt) {
               logger.debug(s"   ${key} -> ${relativePlaceholder} -> ${text} -> ${style}.")
               out.addText(text, relativePlaceholder.x, relativePlaceholder.y, relativePlaceholder.width, relativePlaceholder.height, style)
             }
           }
           case "page" => {
             logger.debug(s"   ${key} -> ${relativePlaceholder} -> ${pageNumber} -> ${style}.")
-            out.addText((pageNumber+1).toString, relativePlaceholder.x, relativePlaceholder.y, relativePlaceholder.width, relativePlaceholder.height, style)
+            out.addText(Content(text=Some((pageNumber+1).toString)), relativePlaceholder.x, relativePlaceholder.y, relativePlaceholder.width, relativePlaceholder.height, style)
           }
         }
       }

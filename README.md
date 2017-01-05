@@ -89,9 +89,21 @@ Generates beautiful photo book PDFs based on templates and album files.
         // each element identifies a placeholder in the template file
       "assignments": {
         // in case the placeholders type is 'image', reference a file
-        "{a placeholder identifier}":"img/IMG_1100.JPG",
+        "{a placeholder identifier}": "img/IMG_1100.JPG",
+        
         // in case the placeholders type is 'text', the tex
-        "{another placeholder identifier}": "Arbitrary text"
+        "{another placeholder identifier}": "Arbitrary text",
+
+        // images can have more properties than just the location:
+        "{yet another placeholder id}": {
+          "url": "img/IMG_1101.JPG",
+          // if the image gets cropped (due to the placeholder's aspect
+          // ratio differring from the image's aspect ratio), it is usually
+          // centered horizontally or vertivally. If this value is
+          // set to 0.0, it is left or top aligned. If it is 1.0, it is
+          // right or bottom aligned. 
+          "cropDisplacement": 0.2
+        }
       },
       // you can override styles, per placeholder
       "styleOverrides": {
