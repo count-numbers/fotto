@@ -10,7 +10,9 @@ object Format {
     "cewe-gross-panorama" -> fromCM(28, 21),
     "cewe-xl" -> fromCM(30, 30),
     "cewe-xxl" -> fromCM(28, 36),
-    "cewe-xxl-panorama" -> fromCM(38, 29)
+    "cewe-xxl-panorama" -> fromCM(38, 29),
+
+    "blurb-quadratisch-klein" -> Format(495, 495, 9, 9, 9, 27)
   )
 
   def fromCM(width: Float, height: Float): Format = {
@@ -18,4 +20,8 @@ object Format {
   }
 }
 
-case class Format(width: Float, height: Float)
+case class Format(width: Float, height: Float, trimTop: Float = 0, trimBottom: Float = 0, trimOuter: Float = 0, trimInner: Float = 0) {
+  def totalWidth() = width + trimOuter + trimInner
+
+  def totalHeight() = height + trimTop + trimBottom
+}

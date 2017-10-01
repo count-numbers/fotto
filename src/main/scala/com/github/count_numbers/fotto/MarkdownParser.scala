@@ -9,9 +9,8 @@ import com.itextpdf.layout.property.{TextAlignment, VerticalAlignment}
   */
 case class MarkdownParser(width: Float, styleOpt: Option[Style]) {
 
-  val normalFont = PdfFontFactory.createFont(FontConstants.HELVETICA)
-  val boldFont = PdfFontFactory.createFont(FontConstants.HELVETICA_BOLD)
-  val italicFont = PdfFontFactory.createFont(FontConstants.HELVETICA_OBLIQUE)
+  val normalFont = PdfFontFactory.createFont(styleOpt.flatMap(_.fontFileNormal).getOrElse(FontConstants.HELVETICA), true)
+  val boldFont = PdfFontFactory.createFont(styleOpt.flatMap(_.fontFileBold).getOrElse(FontConstants.HELVETICA_BOLD), true)
 
   /** Create a single empty paragraph based on the given style.
     * fontFactor can be used to scale up the font size, e.g. to indicate a header paragraph. */
@@ -24,6 +23,7 @@ case class MarkdownParser(width: Float, styleOpt: Option[Style]) {
     for (style <- styleOpt) {
       style.color.foreach(c => par.setFontColor(PdfUtil.colorFromHex(c)))
       style.fontSize.foreach(s => par.setFontSize(s * fontFactor))
+      style.leading.foreach(par.setMultipliedLeading(_))
       style.textAlign match {
         case Some("center") =>
           par.setTextAlignment(TextAlignment.CENTER)
@@ -36,8 +36,8 @@ case class MarkdownParser(width: Float, styleOpt: Option[Style]) {
 
       }
       style.fontWeight match {
-        case Some("bold") => par.setFont(PdfFontFactory.createFont(FontConstants.HELVETICA_BOLD)) //TIMES_BOLD))
-        case _ => Unit
+        case Some("bold") => par.setFont(boldFont)
+        case _ => par.setFont(normalFont)
       }
     }
     par

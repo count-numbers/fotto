@@ -4,6 +4,8 @@ version := "1.0"
 
 scalaVersion := "2.11.8"
 
+mainClass in (Compile, run) := Some("com.github.count_numbers.fotto.Fotto")
+
 libraryDependencies += "com.typesafe.play" % "play-json_2.11" % "2.5.10"
 //libraryDependencies += "org.scala-lang" % "scala-library" % "2.12.0"
 //libraryDependencies += "com.itextpdf" % "itextpdf" % "5.5.10"

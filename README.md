@@ -65,7 +65,12 @@ Generates beautiful photo book PDFs based on templates and album files.
       "textAlign":"left|right|center|justified",
       "borderWidth": 5,
       "borderColor": "#rrggbb",
-      "backgroundColor": "#rrggbb"
+      "backgroundColor": "#rrggbb",
+      "leading": 1.5,
+      "fontFileNormal": "/path/to/Font.ttf",
+      "fontFileBold": "/path/to/Font-Bold.ttf",
+      "addTrimmingMargin": true // if true, ignores the trimming margin outside the actual page contents;
+                                // this is useful for background images which should overlap crop marks
     },
     // more styles
     ...
@@ -126,11 +131,12 @@ Note that captions and text can make limited use of markdown.
 
 ```
 fotto
-    --width UNIT    The page with, in cm, in, or pt
-    --page UNIT     The page height, in cm, in, or pt
-    --watch true    If set, watch the input file and re-render the output on every change.
-    --view true     Open a PDF viewer when generation is complete.
-    --out FILE      Output file
-    --pages RANGE   Render only a subset of pages. Useful in combination with --watch for performance reasons.
-    FILE            Input album file
+    --width UNIT       The page with, in cm, in, or pt
+    --page UNIT        The page height, in cm, in, or pt
+    --watch true       If set, watch the input file and re-render the output on every change.
+    --view true        Open a PDF viewer when generation is complete.
+    --out FILE         Output file
+    --pages RANGE      Render only a subset of pages. Useful in combination with --watch for performance reasons.
+    --crop-marks false Disable rendering of crop marks
+    FILE               Input album file
 ```

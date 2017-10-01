@@ -27,7 +27,9 @@ object PdfOutput {
     val writer = new PdfWriter(out)
     val pdfDoc = new PdfDocument(writer)
 
-    val document = new Document(pdfDoc, new PageSize(format.width, format.height))
+    val document = new Document(pdfDoc, new PageSize(
+      format.width + format.trimOuter + format.trimInner,
+      format.height + format.trimBottom + format.trimTop))
 
     pdfDoc.getDocumentInfo.setCreator("Fotto")
 
@@ -41,25 +43,77 @@ class PdfOutput (val searchPath: File,
                  val doc: Document, val pdfDoc: PdfDocument, val writer: PdfWriter) {
 
   var pageCanvas: PdfCanvas = _
+  var left: Boolean = true
 
-  def startPage() = {
+  def startPage(left: Boolean) = {
     pageCanvas = new PdfCanvas(pdfDoc.addNewPage())
+    this.left = left
+  }
+
+  def trimLines() = {
+
+    val trimlineVisibility = 2f/3f
+    val (trimLeft, trimRight) = if (left) (format.trimOuter, format.trimInner) else (format.trimInner, format.trimOuter)
+
+    pageCanvas
+      .setStrokeColor(PdfUtil.colorFromHex("#000000"))
+      .setLineWidth(0.5f)
+
+      // bottom left vertical
+      .moveTo(trimLeft, 0)
+      .lineTo(trimLeft, format.trimBottom * trimlineVisibility)
+      .closePathStroke()
+      // bottom left horizontal
+      .moveTo(0, format.trimBottom)
+      .lineTo(trimLeft * trimlineVisibility, format.trimBottom)
+      .closePathStroke()
+
+      // top left vertical
+      .moveTo(trimLeft, format.totalHeight)
+      .lineTo(trimLeft, format.totalHeight - format.trimTop * trimlineVisibility)
+      .closePathStroke()
+      // top left horizontal
+      .moveTo(0, format.totalHeight - format.trimTop)
+      .lineTo(trimLeft * trimlineVisibility, format.totalHeight - format.trimTop)
+      .closePathStroke()
+
+      // bottom right vertical
+      .moveTo(format.totalWidth - trimRight, 0)
+      .lineTo(format.totalWidth - trimRight, format.trimBottom * trimlineVisibility)
+      .closePathStroke()
+      // bottom right horizontal
+      .moveTo(format.totalWidth, format.trimBottom)
+      .lineTo(format.totalWidth - trimRight * trimlineVisibility, format.trimBottom)
+      .closePathStroke()
+
+      // top right vertical
+      .moveTo(format.totalWidth - trimRight, format.totalHeight)
+      .lineTo(format.totalWidth - trimRight, format.totalHeight - format.trimTop * trimlineVisibility)
+      .closePathStroke()
+      // top right horizontal
+      .moveTo(format.totalWidth, format.totalHeight - format.trimTop)
+      .lineTo(format.totalWidth - trimRight * trimlineVisibility, format.totalHeight - format.trimTop)
+      .closePathStroke()
+
+
   }
 
   def addText(textContent: Content, x: Float, y: Float, width: Float, height: Float, styleOpt: Option[Style]) = {
     withStyle(styleOpt, x, y, width, height)(canvas => {
       for (text <- textContent.text) {
        val par: Paragraph = new Paragraph()
-          .setWidth(percentageToUserSpaceX(width))
+          .setWidth(percentageToUserSpaceX(width, styleOpt.flatMap(_.addTrimmingMargin)))
           .setVerticalAlignment(VerticalAlignment.TOP)
           .setFont(PdfFontFactory.createFont(FontConstants.HELVETICA))
+
 
         for (style <- styleOpt) {
           style.color.foreach(c => par.setFontColor(PdfUtil.colorFromHex(c)))
           style.fontSize.foreach(s => par.setFontSize(s))
+          style.leading.foreach(par.setMultipliedLeading(_))
           style.textAlign match {
             case Some("center") =>
-              par.addTabStops(new TabStop(percentageToUserSpaceX(width) / 2, TabAlignment.CENTER))
+              par.addTabStops(new TabStop(percentageToUserSpaceX(width, styleOpt.flatMap(_.addTrimmingMargin)) / 2, TabAlignment.CENTER))
               par.add(new Tab())
             case _ => Unit
           }
@@ -69,9 +123,9 @@ class PdfOutput (val searchPath: File,
           }
         }
 
-        par.setHyphenation(new HyphenationConfig(language, country, 3, 3))
+        par.setHyphenation(new HyphenationConfig(language, country, 2, 2))
 
-        val paragraphs: Seq[Paragraph] = MarkdownParser(percentageToUserSpaceX(width), styleOpt)
+        val paragraphs: Seq[Paragraph] = MarkdownParser(percentageToUserSpaceW(width, styleOpt.flatMap(_.addTrimmingMargin)), styleOpt)
           .parse(text)
 
 
@@ -86,14 +140,17 @@ class PdfOutput (val searchPath: File,
         // Wrap everything in a div so we can apply vertical layout
         val div = new Div()
         div.setVerticalAlignment(verticalAlignment)
-        div.setFixedPosition(percentageToUserSpaceX(x), percentageToUserSpaceY(y), percentageToUserSpaceX(width))
-        div.setHeight(percentageToUserSpaceY(height))
+        div.setFixedPosition(percentageToUserSpaceX(x, styleOpt.flatMap(_.addTrimmingMargin)), percentageToUserSpaceY(y, styleOpt.flatMap(_.addTrimmingMargin)), percentageToUserSpaceW(width,styleOpt.flatMap(_.addTrimmingMargin)))
+        div.setHeight(percentageToUserSpaceH(height, styleOpt.flatMap(_.addTrimmingMargin)))
         div.setRole(PdfName.Artifact);
         paragraphs.foreach(div.add(_))
 
         // create canvas on page and add div
-        val canvas: Canvas = new Canvas(pageCanvas, pdfDoc, new Rectangle(percentageToUserSpaceX(x), percentageToUserSpaceY(y),
-          percentageToUserSpaceX(width), percentageToUserSpaceY(height)))
+        val canvas: Canvas = new Canvas(pageCanvas, pdfDoc,
+                                  new Rectangle(percentageToUserSpaceX(x, styleOpt.flatMap(_.addTrimmingMargin)),
+                                                percentageToUserSpaceY(y, styleOpt.flatMap(_.addTrimmingMargin)),
+                                                percentageToUserSpaceX(width, styleOpt.flatMap(_.addTrimmingMargin)),
+                                                percentageToUserSpaceY(height, styleOpt.flatMap(_.addTrimmingMargin))))
         canvas.add(div)
       }
     })
@@ -103,7 +160,7 @@ class PdfOutput (val searchPath: File,
   def addImage(image: Content, x: Float, y: Float, width: Float, height: Float, styleOpt: Option[Style]) = {
     withStyle(styleOpt, x, y, width, height)(canvas => {
 
-      canvas.rectangle(percentageToUserSpace(x, y, width, height))
+      canvas.rectangle(percentageToUserSpace(x, y, width, height, styleOpt.flatMap(_.addTrimmingMargin)))
       canvas.clip()
       canvas.newPath()
 
@@ -111,16 +168,16 @@ class PdfOutput (val searchPath: File,
         val img: ImageData = ImageDataFactory.create(new File(searchPath, imageUrl).toURI.toURL)
         val imgModel = new Image(img)
 
-        val xRatio = percentageToUserSpaceX(width) / imgModel.getImageScaledWidth
-        val yRatio = percentageToUserSpaceY(height) / imgModel.getImageScaledHeight
+        val xRatio = percentageToUserSpaceW(width, styleOpt.flatMap(_.addTrimmingMargin)) / imgModel.getImageScaledWidth
+        val yRatio = percentageToUserSpaceH(height, styleOpt.flatMap(_.addTrimmingMargin)) / imgModel.getImageScaledHeight
         val scale = Math.max(xRatio, yRatio)
         val newWidth: Float = imgModel.getImageScaledWidth * scale
         val newHeight: Float = imgModel.getImageScaledHeight * scale
-        val xCorrection = (newWidth - percentageToUserSpaceX(width)) * image.cropDisplacement.getOrElse(.5f)
-        val yCorrection = (newHeight - percentageToUserSpaceY(height)) * image.cropDisplacement.getOrElse(.5f)
+        val xCorrection = (newWidth - percentageToUserSpaceW(width, styleOpt.flatMap(_.addTrimmingMargin))) * image.cropDisplacement.getOrElse(.5f)
+        val yCorrection = (newHeight - percentageToUserSpaceH(height, styleOpt.flatMap(_.addTrimmingMargin))) * image.cropDisplacement.getOrElse(.5f)
         val bounds = new Rectangle(
-          percentageToUserSpaceX(x) - xCorrection,
-          percentageToUserSpaceY(y) - yCorrection,
+          percentageToUserSpaceX(x, styleOpt.flatMap(_.addTrimmingMargin)) - xCorrection,
+          percentageToUserSpaceY(y, styleOpt.flatMap(_.addTrimmingMargin)) - yCorrection,
           newWidth, newHeight)
         canvas.addImage(img, bounds, false)
       }
@@ -139,7 +196,7 @@ class PdfOutput (val searchPath: File,
 
     for (style <- styleOpt) {
       for (backgroundColor <- style.backgroundColor) {
-        val borderRect = percentageToUserSpace(x, y, width, height)
+        val borderRect = percentageToUserSpace(x, y, width, height, style.addTrimmingMargin)
         pageCanvas.rectangle(borderRect)
         pageCanvas.setFillColor(PdfUtil.colorFromHex(backgroundColor))
         pageCanvas.fill()
@@ -151,7 +208,7 @@ class PdfOutput (val searchPath: File,
 
     for (style <- styleOpt) {
       if (style.borderWidth.isDefined || style.borderColor.isDefined) {
-        val borderRect = percentageToUserSpace(x, y, width, height)
+        val borderRect = percentageToUserSpace(x, y, width, height, style.addTrimmingMargin)
         style.borderWidth.foreach(pageCanvas.setLineWidth(_))
         style.borderColor.foreach(c => pageCanvas.setStrokeColor(PdfUtil.colorFromHex(c)))
         pageCanvas.rectangle(borderRect)
@@ -162,17 +219,36 @@ class PdfOutput (val searchPath: File,
     pageCanvas.restoreState
   }
 
-  def percentageToUserSpaceX(x: Float): Float = x * format.width / 100
+  def percentageToUserSpaceX(x: Float, addTrimmingMargin: Option[Boolean]): Float =
+    if (addTrimmingMargin.getOrElse(false))
+      x * format.totalWidth / 100
+    else
+      x * format.width / 100 + (if (left) format.trimOuter else format.trimInner)
 
-  def percentageToUserSpaceY(y: Float): Float = y * format.height / 100
+  def percentageToUserSpaceY(y: Float, addTrimmingMargin: Option[Boolean]): Float =
+    if (addTrimmingMargin.getOrElse(false))
+      y * format.totalHeight() / 100
+    else
+      y * format.height / 100 + format.trimBottom
 
-  def percentageToUserSpace(x: Float, y: Float, width: Float, height: Float): Rectangle = {
-    new Rectangle(
-      percentageToUserSpaceX(x),
-      percentageToUserSpaceY(y),
-      percentageToUserSpaceX(width),
-      percentageToUserSpaceY(height)
-    )
+  def percentageToUserSpaceW(x: Float, addTrimmingMargin: Option[Boolean]): Float =
+    if (addTrimmingMargin.getOrElse(false))
+      x * format.totalWidth / 100
+    else
+    x * format.width / 100
+
+  def percentageToUserSpaceH(y: Float, addTrimmingMargin: Option[Boolean]): Float =
+    if (addTrimmingMargin.getOrElse(false))
+      y * format.totalHeight() / 100
+    else
+      y * format.height / 100
+
+  def percentageToUserSpace(x: Float, y: Float, width: Float, height: Float, addTrimmingMargin: Option[Boolean]): Rectangle = {
+      new Rectangle(
+        percentageToUserSpaceX(x, addTrimmingMargin),
+        percentageToUserSpaceY(y, addTrimmingMargin),
+        percentageToUserSpaceW(width, addTrimmingMargin),
+        percentageToUserSpaceH(height, addTrimmingMargin))
   }
 
   def close(): Unit = {

@@ -3,6 +3,7 @@ package com.github.count_numbers.fotto
 import java.awt.Desktop
 import java.io.{File, FileOutputStream}
 
+import com.itextpdf.kernel.font.PdfFontFactory
 import com.typesafe.scalalogging.Logger
 import play.api.libs.json.Json
 
@@ -87,7 +88,7 @@ object Fotto {
     for ((page: Page, pageNumber: Int) <- book.pages.view.zipWithIndex if pagesPattern.contains(pageNumber+1)) {
       logger.info(s"### Processing page ${pageNumber+1} of type ${page.pageTemplateRef}.")
 
-      out.startPage()
+      out.startPage(pageNumber % 2 == 1)
 
       val pageTemplate = template.pageTemplates(page.pageTemplateRef)
       for ((key, placeholder) <- pageTemplate.placeholders.toSeq.sortBy(_._2.layer.getOrElse(1))) {
@@ -151,6 +152,12 @@ object Fotto {
             out.addText(Content(text=Some((pageNumber+1).toString)), relativePlaceholder.x, relativePlaceholder.y, relativePlaceholder.width, relativePlaceholder.height, style)
           }
         }
+      }
+
+
+      options.get('cropMarks) match {
+        case Some(false) => Unit
+        case _ => out.trimLines()
       }
     }
 

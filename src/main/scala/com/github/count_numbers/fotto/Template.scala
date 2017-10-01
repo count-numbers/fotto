@@ -6,15 +6,22 @@ import play.api.libs.json.{Json, Reads}
   * Created by simfischer on 12/23/16.
   */
 case class Template(format: String, defaultStyleRef: Option[String], pageTemplates: Map[String,PageTemplate], styles: Map[String,Style], margins: Margins)
+
+/** Content margins, in percent*/
 case class Margins(top: Float, bottom: Float, inner: Float, outer: Float)
+
+/** The template for a page is a collection of placeholders, each of which can contain an image or text. */
 case class PageTemplate(placeholders: Map[String, Placeholder], twoSided: Option[Boolean])
 
+/** Placed either on the page or in the content area. All measures in percent. */
 case class Placeholder(contentType: String, x: Float, y: Float, width: Float, height: Float,
                        defaultTo: Option[String], styleRef: Option[String], relativeTo: Option[String], layer: Option[Int] = Some(1)) {
+
   def mirror(): Placeholder = {
     copy(x = 100 - this.x - this.width)
   }
 
+  /** If the placeholder is relative to the content area, it can be transformed accordingly, given the page's margin.*/
   def relativeTo(margins: Margins, odd: Boolean): Placeholder = {
     val contentW: Float = 100 - margins.inner - margins.outer
     val contentH: Float = 100 - margins.top - margins.bottom
@@ -37,7 +44,11 @@ case class Style(
   textAlign: Option[String],
   fontWeight: Option[String],
   verticalAlign: Option[String],
-  backgroundColor: Option[String]) {
+  backgroundColor: Option[String],
+  leading: Option[Float],
+  addTrimmingMargin: Option[Boolean],
+  fontFileNormal: Option[String],
+  fontFileBold: Option[String]) {
 
   def orElse(other: Style): Style = {
     Style(
@@ -50,7 +61,11 @@ case class Style(
       textAlign.orElse(other.textAlign),
       fontWeight.orElse(other.fontWeight),
       verticalAlign.orElse(other.verticalAlign),
-      backgroundColor.orElse(other.backgroundColor)
+      backgroundColor.orElse(other.backgroundColor),
+      leading.orElse(other.leading),
+      addTrimmingMargin.orElse(other.addTrimmingMargin),
+      fontFileNormal.orElse(other.fontFileNormal),
+      fontFileBold.orElse(other.fontFileBold)
     )
   }
 }
