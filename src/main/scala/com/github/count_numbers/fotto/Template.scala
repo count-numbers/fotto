@@ -48,7 +48,8 @@ case class Style(
   leading: Option[Float],
   addTrimmingMargin: Option[Boolean],
   fontFileNormal: Option[String],
-  fontFileBold: Option[String]) {
+  fontFileBold: Option[String],
+  rotation: Option[Float]) {
 
   def orElse(other: Style): Style = {
     Style(
@@ -65,7 +66,8 @@ case class Style(
       leading.orElse(other.leading),
       addTrimmingMargin.orElse(other.addTrimmingMargin),
       fontFileNormal.orElse(other.fontFileNormal),
-      fontFileBold.orElse(other.fontFileBold)
+      fontFileBold.orElse(other.fontFileBold),
+      rotation.orElse(other.rotation)
     )
   }
 }

@@ -69,8 +69,11 @@ Generates beautiful photo book PDFs based on templates and album files.
       "leading": 1.5,
       "fontFileNormal": "/path/to/Font.ttf",
       "fontFileBold": "/path/to/Font-Bold.ttf",
-      "addTrimmingMargin": true // if true, ignores the trimming margin outside the actual page contents;
-                                // this is useful for background images which should overlap crop marks
+      // if true, ignores the trimming margin outside the actual page contents;
+      // this is useful for background images which should overlap crop marks
+      "addTrimmingMargin": true,  
+      // rotation angle, counter-clockwise, in degrees
+      "rotation": 90
     },
     // more styles
     ...
@@ -131,12 +134,13 @@ Note that captions and text can make limited use of markdown.
 
 ```
 fotto
-    --width UNIT       The page with, in cm, in, or pt
-    --page UNIT        The page height, in cm, in, or pt
-    --watch true       If set, watch the input file and re-render the output on every change.
-    --view true        Open a PDF viewer when generation is complete.
-    --out FILE         Output file
-    --pages RANGE      Render only a subset of pages. Useful in combination with --watch for performance reasons.
-    --crop-marks false Disable rendering of crop marks
-    FILE               Input album file
+    --width UNIT          The page with, in cm, in, or pt
+    --page UNIT           The page height, in cm, in, or pt
+    --watch true          If set, watch the input file and re-render the output on every change.
+    --view true           Open a PDF viewer when generation is complete.
+    --out FILE            Output file
+    --pages RANGE         Render only a subset of pages. Useful in combination with --watch for performance reasons.
+    --crop-marks false    Disable rendering of crop marks
+    --low-resolution true If true, create PDF with low resolution to improve preview performance (at the cost of higher creation time).
+    FILE                  Input album file
 ```

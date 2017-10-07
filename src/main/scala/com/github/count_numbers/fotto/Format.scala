@@ -12,7 +12,16 @@ object Format {
     "cewe-xxl" -> fromCM(28, 36),
     "cewe-xxl-panorama" -> fromCM(38, 29),
 
-    "blurb-quadratisch-klein" -> Format(495, 495, 9, 9, 9, 27)
+    // http://www.blurb.de/make/pdf_to_book/booksize_calculator#book-attributes
+    // margin top, bottom, left, outer >18, inner margin > 45
+    "blurb-squared-klein" -> Format(486, 477, 9, 9, 9, 0),
+    "blurb-standard-portrait" -> Format(576, 720, 9, 9, 9, 0),
+    "blurb-standard-landscape" -> Format(684, 576, 9, 9, 9, 0),
+    "blurb-large-landscape" -> Format(900,765, 9, 9, 9, 0),
+    "blurb-large-squared" -> Format(846, 846, 9, 9, 9, 0), // inner margin 45
+
+    "blurb-standard-landscape-hardcover-cover" -> Format(1439, 604, 22, 22, 22, 22)
+
   )
 
   def fromCM(width: Float, height: Float): Format = {

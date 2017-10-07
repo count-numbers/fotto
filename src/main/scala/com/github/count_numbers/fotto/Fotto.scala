@@ -80,7 +80,8 @@ object Fotto {
 
     val out = PdfOutput(infile.getParentFile, new FileOutputStream(outfile),
       format,
-      book.language, book.country)
+      book.language, book.country,
+      options.getOrElse('lowResolution, false).asInstanceOf[Boolean])
 
 
     val pagesPattern = options.getOrElse('pages, PagesPattern("")).asInstanceOf[PagesPattern]

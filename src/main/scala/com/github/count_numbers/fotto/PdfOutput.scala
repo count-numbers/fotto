@@ -1,7 +1,10 @@
 package com.github.count_numbers.fotto
 
+import java.awt.geom.AffineTransform
+import java.awt.image.{AffineTransformOp, BufferedImage}
 import java.io.{File, OutputStream}
 import java.lang.Float
+import javax.imageio.ImageIO
 
 import com.itextpdf.io.font.FontConstants
 import com.itextpdf.io.image.{ImageData, ImageDataFactory}
@@ -23,7 +26,7 @@ object PdfOutput {
 
   val logger = Logger("fotto")
 
-  def apply(searchPath: File, out: OutputStream, format: Format, language: String, country: String): PdfOutput = {
+  def apply(searchPath: File, out: OutputStream, format: Format, language: String, country: String, lowResolution: Boolean): PdfOutput = {
     val writer = new PdfWriter(out)
     val pdfDoc = new PdfDocument(writer)
 
@@ -33,14 +36,15 @@ object PdfOutput {
 
     pdfDoc.getDocumentInfo.setCreator("Fotto")
 
-    new PdfOutput(searchPath, format, language, country, document, pdfDoc, writer)
+    new PdfOutput(searchPath, format, language, country, document, pdfDoc, writer, lowResolution)
   }
 }
 
 class PdfOutput (val searchPath: File,
                  val format: Format,
                  val language: String, val country: String,
-                 val doc: Document, val pdfDoc: PdfDocument, val writer: PdfWriter) {
+                 val doc: Document, val pdfDoc: PdfDocument, val writer: PdfWriter,
+                 val lowResolution: Boolean) {
 
   var pageCanvas: PdfCanvas = _
   var left: Boolean = true
@@ -143,6 +147,11 @@ class PdfOutput (val searchPath: File,
         div.setFixedPosition(percentageToUserSpaceX(x, styleOpt.flatMap(_.addTrimmingMargin)), percentageToUserSpaceY(y, styleOpt.flatMap(_.addTrimmingMargin)), percentageToUserSpaceW(width,styleOpt.flatMap(_.addTrimmingMargin)))
         div.setHeight(percentageToUserSpaceH(height, styleOpt.flatMap(_.addTrimmingMargin)))
         div.setRole(PdfName.Artifact);
+
+        for {
+          style: Style <- styleOpt
+          rotation <- style.rotation
+        } { div.setRotationAngle(scala.math.toRadians(rotation)) }
         paragraphs.foreach(div.add(_))
 
         // create canvas on page and add div
@@ -157,6 +166,19 @@ class PdfOutput (val searchPath: File,
   }
 
 
+  /** Can be used to create a downsampled image in order to keep the PDF small and have a faster preview.
+    * Increases creation time. */
+  def loadDownsampledImage(file: File) = {
+    val before = ImageIO.read(file)
+    val w = before.getWidth()
+    val h = before.getHeight()
+    val after = new BufferedImage(w / 10, h / 10, before.getType)
+    val at = new AffineTransform()
+    at.scale(0.1, 0.1)
+    val scaleOp = new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR)
+    scaleOp.filter(before, after)
+  }
+
   def addImage(image: Content, x: Float, y: Float, width: Float, height: Float, styleOpt: Option[Style]) = {
     withStyle(styleOpt, x, y, width, height)(canvas => {
 
@@ -165,7 +187,9 @@ class PdfOutput (val searchPath: File,
       canvas.newPath()
 
       for (imageUrl <- image.url) {
-        val img: ImageData = ImageDataFactory.create(new File(searchPath, imageUrl).toURI.toURL)
+        val img: ImageData =
+          if (lowResolution) ImageDataFactory.create(loadDownsampledImage(new File(searchPath, imageUrl)), null, false)
+          else ImageDataFactory.create(new File(searchPath, imageUrl).toURI.toURL)
         val imgModel = new Image(img)
 
         val xRatio = percentageToUserSpaceW(width, styleOpt.flatMap(_.addTrimmingMargin)) / imgModel.getImageScaledWidth
